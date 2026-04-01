@@ -12,7 +12,7 @@ class TaskController extends Controller
     public function index()
     {
         return Inertia::render('Task/Index', [
-            'tasks' => Task::all()
+            'tasks' => auth()->user()->tasks()->latest()->get()
         ]);
     }
 
@@ -29,8 +29,36 @@ class TaskController extends Controller
             'status' => 'required|in:todo,in-progress,done',
         ]);
 
-        $request->user()->tasks()->create($validated);
+        auth()->user()->tasks()->create($validated);
 
-        return redirect()->route('tasks.index');
+        return redirect()->route('tasks.index')->with('success', 'Task created successfully.');
     }
+
+    public function edit(Task $task)
+    {
+        return Inertia::render('Task/Edit', [
+            'task' => $task
+        ]);
+    }
+
+    public function update(Request $request, Task $task)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'url' => 'nullable|url|max:255',
+            'status' => 'required|in:todo,in-progress,done',
+        ]);
+
+        $task->update($validated);
+
+        return to_route('tasks.index')->with('success', 'Task updated successfully.');
+    }
+
+    public function destroy(Task $task)
+    {
+        $task->delete();
+
+        return to_route('tasks.index')->with('success', 'Task deleted successfully.');
+    }
+
 }

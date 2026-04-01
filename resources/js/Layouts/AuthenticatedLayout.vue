@@ -1,13 +1,42 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
+import Alert from '@/Components/Alert.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
+const page = usePage();
+const toasts = ref([]);
+
+const flashMessages = computed(() => {
+    const flash = page.props.flash ?? {};
+
+    return [
+        { type: 'success', message: flash.success },
+        { type: 'error', message: flash.error },
+        { type: 'warning', message: flash.warning },
+        { type: 'info', message: flash.info },
+    ].filter((item) => Boolean(item.message));
+});
+
+watch(
+    flashMessages,
+    (messages) => {
+        toasts.value = messages.map((message, index) => ({
+            id: `${Date.now()}-${index}`,
+            ...message,
+        }));
+    },
+    { immediate: true }
+);
+
+const removeToast = (id) => {
+    toasts.value = toasts.value.filter((toast) => toast.id !== id);
+};
 </script>
 
 <template>
@@ -39,8 +68,8 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     Dashboard
                                 </NavLink>
-                                <NavLink 
-                                    :href="route('tasks.index')" 
+                                <NavLink
+                                    :href="route('tasks.index')"
                                     :active="route().current('tasks.index')"
                                 >
                                     Tasks
@@ -152,8 +181,8 @@ const showingNavigationDropdown = ref(false);
                         >
                             Dashboard
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink 
-                            :href="route('tasks.index')" 
+                        <ResponsiveNavLink
+                            :href="route('tasks.index')"
                             :active="route().current('tasks.index')"
                         >
                             Tasks
@@ -203,8 +232,37 @@ const showingNavigationDropdown = ref(false);
 
             <!-- Page Content -->
             <main>
+                <TransitionGroup
+                    tag="div"
+                    name="toast"
+                    class="pointer-events-none fixed right-4 top-4 z-50 w-full max-w-sm space-y-3 sm:right-6 sm:top-6"
+                >
+                    <Alert
+                        v-for="toast in toasts"
+                        :key="toast.id"
+                        class="pointer-events-auto"
+                        :type="toast.type"
+                        :message="toast.message"
+                        :dismissible="true"
+                        :auto-close-seconds="5"
+                        @close="removeToast(toast.id)"
+                    />
+                </TransitionGroup>
                 <slot />
             </main>
         </div>
     </div>
 </template>
+
+<style scoped>
+.toast-enter-active,
+.toast-leave-active {
+    transition: all 0.25s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+    opacity: 0;
+    transform: translateY(-10px) translateX(10px);
+}
+</style>

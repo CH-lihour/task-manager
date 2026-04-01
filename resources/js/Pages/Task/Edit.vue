@@ -6,26 +6,31 @@ import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
+const props = defineProps({
+    task: {
+        type: Object,
+        required: true,
+    },
+});
+
 const form = useForm({
-    title: '',
-    url: '',
-    status: 'todo',
+    title: props.task.title,
+    url: props.task.url ?? '',
+    status: props.task.status,
 });
 
 const submit = () => {
-    form.post(route('tasks.store'), {
-        onFinish: () => form.reset(),
-    });
+    form.put(route('tasks.update', props.task.id));
 };
 </script>
 
 <template>
-    <Head title="Create Task" />
+    <Head title="Edit Task" />
 
     <AuthenticatedLayout>
         <template #header>
             <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                Create Task
+                Edit Task
             </h2>
         </template>
 
@@ -87,7 +92,7 @@ const submit = () => {
                                     :disabled="form.processing"
                                     :loading="form.processing"
                                 >
-                                    Save Task
+                                    Update Task
                                 </Button>
                             </div>
                         </form>
